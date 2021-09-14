@@ -1,1 +1,135 @@
-var _typeof5="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?function(t){return typeof t}:function(t){return t&&"function"==typeof Symbol&&t.constructor===Symbol&&t!==Symbol.prototype?"symbol":typeof t},_typeof4="function"==typeof Symbol&&"symbol"==_typeof5(Symbol.iterator)?function(t){return void 0===t?"undefined":_typeof5(t)}:function(t){return t&&"function"==typeof Symbol&&t.constructor===Symbol&&t!==Symbol.prototype?"symbol":void 0===t?"undefined":_typeof5(t)},_typeof3="function"==typeof Symbol&&"symbol"==_typeof4(Symbol.iterator)?function(t){return void 0===t?"undefined":_typeof4(t)}:function(t){return t&&"function"==typeof Symbol&&t.constructor===Symbol&&t!==Symbol.prototype?"symbol":void 0===t?"undefined":_typeof4(t)},_typeof2="function"==typeof Symbol&&"symbol"==_typeof3(Symbol.iterator)?function(t){return void 0===t?"undefined":_typeof3(t)}:function(t){return t&&"function"==typeof Symbol&&t.constructor===Symbol&&t!==Symbol.prototype?"symbol":void 0===t?"undefined":_typeof3(t)};Object.defineProperty(exports,"__esModule",{value:!0});var _typeof="function"==typeof Symbol&&"symbol"==_typeof2(Symbol.iterator)?function(t){return void 0===t?"undefined":_typeof2(t)}:function(t){return t&&"function"==typeof Symbol&&t.constructor===Symbol&&t!==Symbol.prototype?"symbol":void 0===t?"undefined":_typeof2(t)},_createClass=function(){function n(t,e){for(var o=0;o<e.length;o++){var n=e[o];n.enumerable=n.enumerable||!1,n.configurable=!0,"value"in n&&(n.writable=!0),Object.defineProperty(t,n.key,n)}}return function(t,e,o){return e&&n(t.prototype,e),o&&n(t,o),t}}(),_clipboardAction=require("./clipboard-action"),_clipboardAction2=_interopRequireDefault(_clipboardAction),_tinyEmitter=require("tiny-emitter"),_tinyEmitter2=_interopRequireDefault(_tinyEmitter),_goodListener=require("good-listener"),_goodListener2=_interopRequireDefault(_goodListener);function _interopRequireDefault(t){return t&&t.__esModule?t:{default:t}}function _classCallCheck(t,e){if(!(t instanceof e))throw new TypeError("Cannot call a class as a function")}function _possibleConstructorReturn(t,e){if(!t)throw new ReferenceError("this hasn't been initialised - super() hasn't been called");return!e||"object"!=(void 0===e?"undefined":_typeof2(e))&&"function"!=typeof e?t:e}function _inherits(t,e){if("function"!=typeof e&&null!==e)throw new TypeError("Super expression must either be null or a function, not "+(void 0===e?"undefined":_typeof2(e)));t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}var Clipboard=function(t){function n(t,e){_classCallCheck(this,n);var o=_possibleConstructorReturn(this,(n.__proto__||Object.getPrototypeOf(n)).call(this));return o.resolveOptions(e),o.listenClick(t),o}return _inherits(n,_tinyEmitter2.default),_createClass(n,[{key:"resolveOptions",value:function(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:{};this.action="function"==typeof t.action?t.action:this.defaultAction,this.target="function"==typeof t.target?t.target:this.defaultTarget,this.text="function"==typeof t.text?t.text:this.defaultText,this.container="object"===_typeof(t.container)?t.container:document.body}},{key:"listenClick",value:function(t){var e=this;this.listener=(0,_goodListener2.default)(t,"click",function(t){return e.onClick(t)})}},{key:"onClick",value:function(t){var e=t.delegateTarget||t.currentTarget;this.clipboardAction&&(this.clipboardAction=null),this.clipboardAction=new _clipboardAction2.default({action:this.action(e),target:this.target(e),text:this.text(e),container:this.container,trigger:e,emitter:this})}},{key:"defaultAction",value:function(t){return getAttributeValue("action",t)}},{key:"defaultTarget",value:function(t){var e=getAttributeValue("target",t);if(e)return document.querySelector(e)}},{key:"defaultText",value:function(t){return getAttributeValue("text",t)}},{key:"destroy",value:function(){this.listener.destroy(),this.clipboardAction&&(this.clipboardAction.destroy(),this.clipboardAction=null)}}],[{key:"isSupported",value:function(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:["copy","cut"],e="string"==typeof t?[t]:t,o=!!document.queryCommandSupported;return e.forEach(function(t){o=o&&!!document.queryCommandSupported(t)}),o}}]),n}();function getAttributeValue(t,e){var o="data-clipboard-"+t;if(e.hasAttribute(o))return e.getAttribute(o)}exports.default=Clipboard;
+import ClipboardAction from './clipboard-action';
+import Emitter from 'tiny-emitter';
+import listen from 'good-listener';
+
+/**
+ * Base class which takes one or more elements, adds event listeners to them,
+ * and instantiates a new `ClipboardAction` on each click.
+ */
+class Clipboard extends Emitter {
+    /**
+     * @param {String|HTMLElement|HTMLCollection|NodeList} trigger
+     * @param {Object} options
+     */
+    constructor(trigger, options) {
+        super();
+
+        this.resolveOptions(options);
+        this.listenClick(trigger);
+    }
+
+    /**
+     * Defines if attributes would be resolved using internal setter functions
+     * or custom functions that were passed in the constructor.
+     * @param {Object} options
+     */
+    resolveOptions(options = {}) {
+        this.action    = (typeof options.action    === 'function') ? options.action    : this.defaultAction;
+        this.target    = (typeof options.target    === 'function') ? options.target    : this.defaultTarget;
+        this.text      = (typeof options.text      === 'function') ? options.text      : this.defaultText;
+        this.container = (typeof options.container === 'object')   ? options.container : document.body;
+    }
+
+    /**
+     * Adds a click event listener to the passed trigger.
+     * @param {String|HTMLElement|HTMLCollection|NodeList} trigger
+     */
+    listenClick(trigger) {
+        this.listener = listen(trigger, 'click', (e) => this.onClick(e));
+    }
+
+    /**
+     * Defines a new `ClipboardAction` on each click event.
+     * @param {Event} e
+     */
+    onClick(e) {
+        const trigger = e.delegateTarget || e.currentTarget;
+
+        if (this.clipboardAction) {
+            this.clipboardAction = null;
+        }
+
+        this.clipboardAction = new ClipboardAction({
+            action    : this.action(trigger),
+            target    : this.target(trigger),
+            text      : this.text(trigger),
+            container : this.container,
+            trigger   : trigger,
+            emitter   : this
+        });
+    }
+
+    /**
+     * Default `action` lookup function.
+     * @param {Element} trigger
+     */
+    defaultAction(trigger) {
+        return getAttributeValue('action', trigger);
+    }
+
+    /**
+     * Default `target` lookup function.
+     * @param {Element} trigger
+     */
+    defaultTarget(trigger) {
+        const selector = getAttributeValue('target', trigger);
+
+        if (selector) {
+            return document.querySelector(selector);
+        }
+    }
+
+    /**
+     * Returns the support of the given action, or all actions if no action is
+     * given.
+     * @param {String} [action]
+     */
+    static isSupported(action = ['copy', 'cut']) {
+        const actions = (typeof action === 'string') ? [action] : action;
+        let support = !!document.queryCommandSupported;
+
+        actions.forEach((action) => {
+            support = support && !!document.queryCommandSupported(action);
+        });
+
+        return support;
+    }
+
+    /**
+     * Default `text` lookup function.
+     * @param {Element} trigger
+     */
+    defaultText(trigger) {
+        return getAttributeValue('text', trigger);
+    }
+
+    /**
+     * Destroy lifecycle.
+     */
+    destroy() {
+        this.listener.destroy();
+
+        if (this.clipboardAction) {
+            this.clipboardAction.destroy();
+            this.clipboardAction = null;
+        }
+    }
+}
+
+
+/**
+ * Helper function to retrieve attribute value.
+ * @param {String} suffix
+ * @param {Element} element
+ */
+function getAttributeValue(suffix, element) {
+    const attribute = `data-clipboard-${suffix}`;
+
+    if (!element.hasAttribute(attribute)) {
+        return;
+    }
+
+    return element.getAttribute(attribute);
+}
+
+export default Clipboard;
